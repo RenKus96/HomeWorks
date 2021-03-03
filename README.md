@@ -1,6 +1,11 @@
-# HomeWorks №13
-Проверка введенной строки на соответствие номеру автомобиля с помощью регулярных выражений.
+# HomeWorks №14
+Изучение сортировок:
+-= Сортировка пузырьком =-
+-= Сортировка пузырьком без повторений =-
+-= Коктейльная (Шейкерная, двухсторонняя пузырьковая и т.п.) сортировка =-
 
-Checking the entered string for compliance with the car's license plate using regular expressions.
-
+Learning Sorts:
+-= Bubble Sort =-
+-= Bubble sort without repeating =-
+-= Cocktail (Shaker, double-sided bubble, etc.) sorting =-
 
