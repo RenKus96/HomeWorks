@@ -1,5 +1,6 @@
 from flask import Flask
 from faker import Faker
+import csv
 
 app = Flask(__name__)
 
