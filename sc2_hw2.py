@@ -17,10 +17,10 @@ def get_avr_data():
         height_sum = 0.0
         weight_sum = 0.0
         for row in file_reader:
-            # out_str += '{}. {}<br>'.format(count+1,row)
+            count += 1
+            # out_str += '{}. {}<br>'.format(count,row)
             height_sum += float(row[' "Height(Inches)"'])
             weight_sum += float(row[' "Weight(Pounds)"'])
-            count += 1
         out_str += ' Общее количество студентов - {}<br>'.format(count)
         out_str += ' Средний рост: в дюймах - {:.2f}, в сантиметрах - {:.1f}<br>'.format(height_sum/count, height_sum*INCH_TO_CM/count)
         out_str += ' Средний вес: в фунтах - {:.2f}, в килограммах - {:.2f}'.format(weight_sum/count, weight_sum*POUND_TO_KG/count)
