@@ -1,61 +1,53 @@
 import random
 import string
 from flask import Flask, request, Response, render_template, Markup
-import html
+from marshmallow.validate import Length
+from webargs.flaskparser import use_kwargs
+from webargs import fields, validate, ValidationError
+# import html
 import requests
 
-yes_no = [1,0]
-str_len = '100'
+str_len = 100
 app = Flask(__name__)
 
-def check_yes_no(param):
-    res = request.args.get(param, '0')
-    msg = 'Всё ОК!'
-    status = 200
-    if res.isdigit():
-        res = int(res)
-        if res not in yes_no:
-            msg = 'Error: Параметр specials должен быть  1 или 0'
-            status = 400
+from flask import jsonify
+@app.errorhandler(422)
+@app.errorhandler(400)
+def handle_error(err):
+    headers = err.data.get("headers", None)
+    messages = err.data.get("messages", ["Invalid request."])
+    if headers:
+        return jsonify({"errors": messages}), err.code, headers
     else:
-        msg = 'Error: Параметр specials должен быть числовым'
-        status = 400
-    return res, msg, status
+        return jsonify({"errors": messages}), err.code
+
+def check_currency(param):
+    if not param.isalpha() or len(param)!=3:
+        raise ValidationError('Invalid currency format - {}'.format(param))
 
 def encode_str_to_html(s):
     return ''.join('&#{:07d};'.format(ord(c)) for c in s)
 
 @app.route('/random')
-def get_random():
-    length = request.args.get('length', str_len)
-    if length.isdigit():
-        length = int(length)
-        if not (1 <= length <= int(str_len)):
-            return Response('Error: Параметр length должен быть в приделах от 1 до {}'.format(str_len), status=400)
-    else:
-        return Response('Error: Параметр length должен быть числовым',status=400)
-
-    # specials = request.args.get('specials', '0')
-    # if specials.isdigit():
-    #     specials = int(specials)
-    #     if specials not in yes_no:
-    #         return Response('Error: Параметр specials должен быть  1 или 0', status=400)
-    # else:
-    #     return Response('Error: Параметр specials должен быть числовым',status=400)
-    specials, msg, status = check_yes_no('specials')
-    if status != 200:
-        return Response(msg, status = status)
-
-    # digits = request.args.get('digits', '0')
-    # if digits.isdigit():
-    #     digits = int(digits)
-    #     if digits not in yes_no:
-    #         return Response('Error: Параметр digits должен быть  1 или 0', status=400)
-    # else:
-    #     return Response('Error: Параметр digits должен быть числовым', status=400)
-    digits, msg, status = check_yes_no('digits')
-    if status != 200:
-        return Response(msg, status = status)
+@use_kwargs({
+    "length": fields.Int(
+            required=False,
+            missing=str_len,
+            validate=[validate.Range(min=1, max=str_len)]
+        ),
+    "digits": fields.Int(
+        required=False,
+        missing=0,
+        validate=validate.OneOf([0, 1])
+    ),
+    "specials": fields.Int(
+        required=False,
+        missing=0,
+        validate=validate.OneOf([0, 1])
+    )},
+    location="query"
+)
+def get_random(length, digits, specials):
 
     gen_str = string.ascii_letters
     if specials:
@@ -74,11 +66,11 @@ def get_random():
     return render_template('random_str.html', stroka1=rand_string, stroka2=Markup(rand_string), stroka3=Markup.escape(rand_string))
     # Получается, что через шаблоны экранирование идёт автоматически в отличии вывода через String
 
-def getFromHTTP(fromHTTP):
+def get_from_http(from_http):
     try:
-        p = requests.get(fromHTTP)
+        p = requests.get(from_http)
     except requests.exceptions.RequestException as err:
-        msg = "Нет доступа к данным {} по причине --> {}\n".format(fromHTTP, err)
+        msg = "Нет доступа к данным {} по причине --> {}\n".format(from_http, err)
         return False, None, msg
     if p.status_code == 200:
         return True, p.json(), 'Всё ОК!'
@@ -91,11 +83,19 @@ def getFromHTTP(fromHTTP):
             return False, None, msg
 
 @app.route('/bitcoin_rate')
-def get_bitcoin_rate():
-    valute = request.args.get('currency', 'USD').upper()
-    if not valute.isalpha() or len(valute)!=3:
-        return Response('Error: Неверный формат валюты - {}'.format(valute), status=400)
-    resOk, rate, msg = getFromHTTP("https://bitpay.com/api/rates/{}".format(valute))
+@use_kwargs({
+    "currency": fields.Str(
+        required=False,
+        missing='USD',
+        # validate=[validate.Length(equal=3)]
+        # validate=[validate.Regexp(r'^[A-Za-z]{3}$')],
+        validate=check_currency
+    )},
+    location="query"
+)
+def get_bitcoin_rate(currency):
+    valute = currency.upper()
+    resOk, rate, msg = get_from_http("https://bitpay.com/api/rates/{}".format(valute))
     if resOk:
         return render_template('bitcoin_rate.html', name=rate['name'], code=rate['code'], rate=rate['rate'])
     else:
