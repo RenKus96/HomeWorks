@@ -7,7 +7,7 @@ from webargs import fields, validate, ValidationError
 # import html
 import requests
 
-str_len = 100
+STR_LEN = 100
 app = Flask(__name__)
 
 from flask import jsonify
@@ -32,8 +32,8 @@ def encode_str_to_html(s):
 @use_kwargs({
     "length": fields.Int(
             required=False,
-            missing=str_len,
-            validate=[validate.Range(min=1, max=str_len)]
+            missing=STR_LEN,
+            validate=[validate.Range(min=1, max=STR_LEN)]
         ),
     "digits": fields.Int(
         required=False,
