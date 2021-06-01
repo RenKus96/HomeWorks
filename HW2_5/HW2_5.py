@@ -110,8 +110,8 @@ def get_greatest_artists(count=None):
     location="query"
 )
 def get_stats_by_city(genre=None, count=None):
-    header = 'Топ городов-меломанов'
-    description = 'Список топ городов где слушают <b>{}</b>:<br> '.format(genre if genre else 'музыку')
+    header = 'Топ {} городов-меломанов'.format(str(count) if count else '')
+    description = 'Список топ <b>{}</b> городов где слушают <b>{}</b>:<br> '.format(str(count) if count else '',genre if genre else 'музыку')
     sql = """select invoices.BillingCity City, sum(invoice_items.Quantity) Quantity  from invoice_items 
                 join invoices on invoice_items.InvoiceId=invoices.InvoiceId
                 join tracks on invoice_items.TrackId=tracks.TrackId
