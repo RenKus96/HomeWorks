@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Случайная строка</title>
+</head>
+<body>
+    <p><b> По умолчанию:</b></p>
+    <p> Случайная строка - {{stroka1}}</p>
+    <p><b> С отключённым экранированием в шаблоне "autoescape false":</b></p>
+{% autoescape false %}
+    <p> Случайная строка - {{stroka1}}</p>
+{% endautoescape %}
+    <p><b> Без экранирования ( помеченная как безопасный код через flask.Markup() ):</b></p>
+	<p> Случайная строка - {{stroka2}}</p>
+    <p><b> С экранированием ( помеченная как безопасный код через flask.Markup.escape() ):</b></p>
+	<p> Случайная строка - {{stroka3}}</p>
+</body>
+</html>
+
