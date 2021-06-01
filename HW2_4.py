@@ -1,152 +1,100 @@
-import random
-import string
+import os
 from flask import Flask, request, Response, render_template, Markup
+from webargs.flaskparser import use_kwargs
+from webargs import fields, validate, ValidationError
 import sqlite3
  
-dbname = 'chinook.db'
+db_name = os.path.join(os.getcwd(), 'chinook.db')
 app = Flask(__name__)
 
+from flask import jsonify
+@app.errorhandler(422)
+@app.errorhandler(400)
+def handle_error(err):
+    headers = err.data.get("headers", None)
+    messages = err.data.get("messages", ["Invalid request."])
+    if headers:
+        return jsonify({"errors": messages}), err.code, headers
+    else:
+        return jsonify({"errors": messages}), err.code
+
+def check_name(param):
+    if not param.isalpha():
+        raise ValidationError('Invalid name format - {}'.format(param))
+
 def get_fetch_one(sql):
-    try:
-        conn = sqlite3.connect(dbname) 
-        with conn:
-            cur = conn.cursor()
-            cur.execute(sql)
-            res = cur.fetchone()[0]
-            res_ok = True
-    except sqlite3.Error as err:
-        res = err.args[0]
-        res_ok = False
-    finally:
-        if conn:
-            conn.close()
-    return res_ok, res
+    conn = sqlite3.connect(db_name) 
+    with conn:
+        cur = conn.cursor()
+        cur.execute(sql)
+        res = cur.fetchone()[0]
+    return res
+
+def get_fetch_all(sql):
+    conn = sqlite3.connect(db_name) 
+    with conn:
+        cur = conn.cursor()
+        cur.execute(sql)
+        res = cur.fetchall()
+        fields = [desc[0] for desc in cur.description]
+    return res, fields
 
 @app.route('/unique_names')
 def get_unique_names():
-    zag = 'Таблица Customers'
-    opis = 'Количество уникальных имен (FirstName) в таблице Customers: '
+    header = 'Таблица Customers'
+    description = 'Количество уникальных имен (FirstName) в таблице Customers: '
     sql = "select count(distinct(FirstName)) from Customers"
-    res_ok, res = get_fetch_one(sql)
-    if res_ok:
-        out_str = Markup('<b>{}</b>'.format(res))
-    else:
-        opis = 'Во время обращения к базе произошла ошибка:'
-        out_str = Markup('<br>{}'.format(res))
-    return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
-# @app.route('/unique_names')
-# def get_unique_names():
-#     zag = 'Таблица Customers'
-#     opis = 'Количество уникальных имен (FirstName) в таблице Customers: '
-#     try:
-#         conn = sqlite3.connect(dbname) 
-#         with conn:
-#             cur = conn.cursor()
-#             sql = "select count(distinct(FirstName)) from Customers"
-#             cur.execute(sql)
-#             out_str = Markup('<b>{}</b>'.format(cur.fetchone()[0]))
-#     except sqlite3.Error as err:
-#         opis = 'Во время обращения к базе произошла ошибка:'
-#         out_str = Markup('<br>'+err.args[0])
-#     finally:
-#         if conn:
-#             conn.close()
-#     return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
+    res = get_fetch_one(sql)
+    out_str = Markup('<b>{}</b>'.format(res))
+    return render_template('for_any_data.html', header = header, description = description, data = out_str)
 
 @app.route('/tracks_count')
 def get_tracks_count():
-    zag = 'Таблица Tracks'
-    opis = 'Количество записей в таблице Tracks: '
+    header = 'Таблица Tracks'
+    description = 'Количество записей в таблице Tracks: '
     sql = "select count(*) from Tracks"
-    res_ok, res = get_fetch_one(sql)
-    if res_ok:
-        out_str = Markup('<b>{}</b>'.format(res))
-    else:
-        opis = 'Во время обращения к базе произошла ошибка:'
-        out_str = Markup('<br>{}'.format(res))
-    return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
-# @app.route('/tracks_count')
-# def get_tracks_count():
-#     zag = 'Таблица Tracks'
-#     opis = 'Количество записей в таблице Tracks: '
-#     try:
-#         conn = sqlite3.connect(dbname) 
-#         with conn:
-#             cur = conn.cursor()
-#             sql = "select count(*) from Tracks"
-#             cur.execute(sql)
-#             out_str = Markup('<b>{}</b>'.format(cur.fetchone()[0]))
-#     except sqlite3.Error as err:
-#         opis = 'Во время обращения к базе произошла ошибка:'
-#         out_str = Markup('<br>'+err.args[0])
-#     finally:
-#         if conn:
-#             conn.close()
-#     return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
+    res = get_fetch_one(sql)
+    out_str = Markup('<b>{}</b>'.format(res))
+    return render_template('for_any_data.html', header = header, description = description, data = out_str)
 
 @app.route('/sales')
 def get_sales():
-    zag = 'Таблица Invoice_Items'
-    opis = 'Сумма всех продаж компании из таблицы Invoice_Items: '
+    header = 'Таблица Invoice_Items'
+    description = 'Сумма всех продаж компании из таблицы Invoice_Items: '
     sql = "select sum(UnitPrice * Quantity) from Invoice_Items"
-    res_ok, res = get_fetch_one(sql)
-    if res_ok:
-        out_str = Markup('<b>{:.2f}</b>'.format(res))
-    else:
-        opis = 'Во время обращения к базе произошла ошибка:'
-        out_str = Markup('<br>{}'.format(res))
-    return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
-# @app.route('/sales')
-# def get_sales():
-#     zag = 'Таблица Invoice_Items'
-#     opis = 'Сумма всех продаж компании из таблицы Invoice_Items: '
-#     try:
-#         conn = sqlite3.connect(dbname) 
-#         with conn:
-#             cur = conn.cursor()
-#             sql = "select sum(UnitPrice * Quantity) from Invoice_Items"
-#             cur.execute(sql)
-#             out_str = Markup('<b>{:.2f}</b>'.format(cur.fetchone()[0]))
-#     except sqlite3.Error as err:
-#         opis = 'Во время обращения к базе произошла ошибка:'
-#         out_str = Markup('<br>'+err.args[0])
-#     finally:
-#         if conn:
-#             conn.close()
-#     return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
+    res = get_fetch_one(sql)
+    out_str = Markup('<b>{:.2f}</b>'.format(res))
+    return render_template('for_any_data.html', header = header, description = description, data = out_str)
 
 @app.route('/customers')
-def get_customers():
-    city = request.args.get('city')
-    country = request.args.get('country')
-    sql = 'select * from Customers '
-    if city or country:
-        sql += 'where '
-    if city :
-        sql += "City='{}' ".format(city)
-    if city and country:
-        sql += 'and '
+@use_kwargs({
+    "city": fields.Str(
+        required=False,
+        validate=check_name
+    ),
+    "country": fields.Str(
+        required=False,
+        validate=check_name
+    )},
+    location="query"
+)
+def get_customers(city=None, country=None):
+    sql = 'select * from Customers'
+    where_filter = {}
+    if city:
+        where_filter['City'] = city
     if country:
-        sql += "Country='{}' ".format(country)
-    zag = 'Таблица Customers'
-    opis = 'Содержимое таблицы Customers с фильтрацией по городу и стране: '
-    try:
-        conn = sqlite3.connect(dbname) 
-        with conn:
-            cur = conn.cursor()
-            cur.execute(sql)
-            out_str = ''
-            for cnt, row in enumerate(cur.fetchall(), 1):
-                out_str += '<br> {}. {}'.format(cnt, row)
-            out_str = Markup(out_str)
-    except sqlite3.Error as err:
-        opis = 'Во время обращения к базе произошла ошибка:'
-        out_str = Markup('<br>'+err.args[0])
-    finally:
-        if conn:
-            conn.close()
-    return render_template('for_any_data.html', zagolovok = zag, opisanie = opis, data = out_str)
+        where_filter['Country'] = country
+    if where_filter:
+        sql += ' where ' + ' and '.join('{}=\'{}\''.format(name, value) for name, value in where_filter.items())
 
+    header = 'Таблица Customers'
+    description = 'Содержимое таблицы <b>Customers</b> с фильтрацией по <b>городу</b> и <b>стране</b>:<br>'
+    res, fields = get_fetch_all(sql)
+    out_str = ''
+    for cnt, row in enumerate(res, 1):
+        out_str += '<br> <b>{}</b>.  {}'.format(cnt, ', '.join('<b>{}</b>=\'{}\''.format(fld,str(s)) for fld,s in zip(fields,row)))
+    return render_template('for_any_data.html', header = header, description = Markup(description), data = Markup(out_str))
 
 if __name__ == "__main__":
     app.run(debug=True)
