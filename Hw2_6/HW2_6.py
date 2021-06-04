@@ -88,15 +88,12 @@ class Circle(Shape):
     '''Класс определяет окружность с координатами в точке (x,y)'''
     def __init__(self, x, y, radius):
         super().__init__(x, y)
-        if isinstance(radius, (int, float)) and radius > 0:
-            self.radius = radius
-        else:
-            raise TypeError('Радиус должен быть положительным числом!')
+
     def contains(self, point):
         return (point.x-self.x)**2+(point.y-self.y)**2 <= self.radius**2
 
     def __contains__(self, point):
-        return (point.x-self.x)**2+(point.y-self.y)**2 <= self.radius**2
+        return self.contains(point)
 
 class Point(Shape):
     '''Класс определяет Точку с координатами (x,y)'''
