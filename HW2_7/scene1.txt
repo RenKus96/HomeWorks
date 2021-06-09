@@ -1,0 +1,8 @@
+Rectangle;0;0;10;20
+Rectangle;10;0;10;20
+Circle;10;0;10
+Circle;100;100;5
+Parallelogram;1;2;20;30;45
+Parallelogram;1;2;20;30;90
+Triangle;1;2;20;30;45
+Triangle;1;2;20;30;90
